@@ -1,14 +1,15 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/streadway/amqp"
-	"log"
+	"os"
 )
 
 func failOnError(err error, msg string) {
 	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
+		fmt.Fprintf(os.Stderr, "%s: %s", msg, err)
 		panic(fmt.Sprintf("%s: %s", msg, err))
 	}
 }
@@ -36,8 +37,8 @@ func send(messages chan []byte, exchange string) {
 	}
 }
 
-func listen(queue_name string, messages chan []byte) {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+func listen(connectionStr string, queue_name string, messages chan []byte) {
+	conn, err := amqp.Dial(connectionStr)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -58,17 +59,29 @@ func listen(queue_name string, messages chan []byte) {
 
 	for rabbmit_mq_payload := range msgs {
 		message := rabbmit_mq_payload.Body
-		fmt.Printf("received message: %s", string(message[:]))
+		fmt.Fprintf(os.Stderr, "message received!\n")
+		fmt.Println(string(message[:]))
 		messages <- message
 	}
 }
 
 func main() {
+
+	fromQueuePtr := flag.String("q", "", "The queue from wich to take the messages out of.")
+	toExchangePtr := flag.String("x", "", "The exchange all the messages should be passed on to.")
+
+	connectionStrPtr := flag.String("rabbit", "amqp://guest:guest@localhost:5672/", "Rabbmit MQ connection string.")
+
+	flag.Parse()
+
+	fmt.Fprintf(os.Stderr, "Host: %s\n", *connectionStrPtr)
+	fmt.Fprintf(os.Stderr, "%s --->> %s\n", *fromQueuePtr, *toExchangePtr)
+
 	messages := make(chan []byte)
-	go listen("inbox.errorsQ", messages)
-	go send(messages, "inbox")
+	go listen(*connectionStrPtr, *fromQueuePtr, messages)
+	go send(messages, *toExchangePtr)
 
 	forever := make(chan bool)
-	fmt.Printf("Listenting for messages. Send Ctrl-C to stop...")
+	fmt.Fprintln(os.Stderr, "Listening for messages! Send Ctrl-C to stop...")
 	<-forever
 }
