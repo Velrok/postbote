@@ -14,8 +14,8 @@ func failOnError(err error, msg string) {
 	}
 }
 
-func send(messages chan []byte, exchange string) {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+func send(connectionStr string, messages chan []byte, exchange string) {
+	conn, err := amqp.Dial(connectionStr)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -69,7 +69,6 @@ func main() {
 
 	fromQueuePtr := flag.String("q", "", "The queue from wich to take the messages out of.")
 	toExchangePtr := flag.String("x", "", "The exchange all the messages should be passed on to.")
-
 	connectionStrPtr := flag.String("rabbit", "amqp://guest:guest@localhost:5672/", "Rabbmit MQ connection string.")
 
 	flag.Parse()
@@ -79,7 +78,7 @@ func main() {
 
 	messages := make(chan []byte)
 	go listen(*connectionStrPtr, *fromQueuePtr, messages)
-	go send(messages, *toExchangePtr)
+	go send(*connectionStrPtr, messages, *toExchangePtr)
 
 	forever := make(chan bool)
 	fmt.Fprintln(os.Stderr, "Listening for messages! Send Ctrl-C to stop...")
