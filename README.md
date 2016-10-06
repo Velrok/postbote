@@ -9,7 +9,7 @@ Messages are logged to stdout separated by new line.
 This example would take all messages from `inbox.errorsQ` and forward them into the `inbox` exchange, while logging them into the `messages` file.
 
 This works well for string based formats like json.
-If you are sendig binary data, be aware that the output separates messages with a `\n` character.
+If you are sendig binary data, be aware that the output separates messages with a `\n` character, which will probably break your messages.
 
 ```
 postbote -q=inbox.errorsQ -x=inbox > messages
