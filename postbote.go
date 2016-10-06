@@ -76,7 +76,7 @@ func main() {
 	fmt.Fprintf(os.Stderr, "Host: %s\n", *connectionStrPtr)
 	fmt.Fprintf(os.Stderr, "%s --->> %s\n", *fromQueuePtr, *toExchangePtr)
 
-	messages := make(chan []byte)
+	messages := make(chan []byte, 0)
 	go listen(*connectionStrPtr, *fromQueuePtr, messages)
 	go send(*connectionStrPtr, messages, *toExchangePtr)
 
